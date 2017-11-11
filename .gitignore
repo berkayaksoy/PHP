@@ -1,5 +1,7 @@
-node_modules/
+/nbproject/
+/.idea/*
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
 *.sublime-workspace
-.DS_Store
-*.swp
-**/test/out/
+*.sublime-project
