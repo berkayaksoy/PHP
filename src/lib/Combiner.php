@@ -83,11 +83,8 @@ class Combiner {
 				call_user_func($this->checkpointer,$result);
 			}
 			if(!$result['success']) {
-				/**
-				* @todo we need to kill this process osmehow
-				*/
-				exit();
-			} 
+				throw new \Exception('Unable to write event to the bus.');
+			}
 		}
 	}
 
