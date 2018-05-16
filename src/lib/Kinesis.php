@@ -49,15 +49,16 @@ class Kinesis extends Uploader{
 			}
 			var_dump($this->id);
 			$result = $this->client->putRecords([
-			    'StreamName' => $this->stream,
-			    'Records' => array_map(function($record) {
-			    	return [
-			    		"Data"=>gzencode($record['data']), 
-			    		"PartitionKey"=> $this->id
+				'StreamName' => $this->stream,
+				'Records' => array_map(function($record) {
+					return [
+						"Data"=>gzencode($record['data']),
+						"PartitionKey"=> $this->id
 
-			    	];
-			    },$batch['records'])
+					];
+				},$batch['records'])
 			]);
+
 			if($retries > 0) {
 				print "\tRetrying(#{$retries}) {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds\n";
 			} else {
@@ -85,6 +86,7 @@ class Kinesis extends Uploader{
 		if(\count($batch['records']) > 0) {
 			return [
 				"success"=>false,
+				'errorMessage' => 'Failed to write ' . count($batch['records']) . ' events to the stream',
 			];
 		} else {
 			if(!empty($correlation['end'])) {
