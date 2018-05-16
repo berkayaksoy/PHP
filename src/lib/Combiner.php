@@ -11,7 +11,6 @@ class Combiner {
 	private $uploader;
 	private $massUploader;
 	private $upgradeable = false;
-	private $byEvent = false;
 	private $checkpointer;
 
 	private $startTime;
@@ -78,12 +77,11 @@ class Combiner {
 	private function submitBatch() {
 		if($this->batch['length']) {
 			$result = $this->uploader->sendRecords($this->batch);
-			if($result['eid']) {
+			if(!$result['success']) {
+				throw new \Exception(!empty($result['errorMessage']) ? $result['errorMessage'] : 'Unable to write events to the bus.');
+			} else if ($result['eid']) {
 				Utils::log($result);
 				call_user_func($this->checkpointer,$result);
-			}
-			if(!$result['success']) {
-				throw new \Exception('Unable to write event to the bus.');
 			}
 		}
 	}
@@ -119,7 +117,6 @@ class Combiner {
 			$record['units'] = $opts['units'];
 		}
 		$append = null;
-		$length = 0;
 
 		if($this->uploader->combine) {
 			$string = json_encode($record) . "\n";

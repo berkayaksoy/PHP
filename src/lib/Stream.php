@@ -24,11 +24,7 @@ class Stream {
 	}
 	public function createBufferedWriteStream($opts=[], $checkpointer) {
 		if(!$this->id) {
-<<<<<<< HEAD
-			throw new \Exeption("You must specify a bot id");
-=======
 			throw new \Exception("You must specify a bot id");
->>>>>>> release
 		}
 
 		switch($this->opts['uploader']) {

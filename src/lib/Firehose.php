@@ -49,10 +49,10 @@ class Firehose extends Uploader{
 			Utils::log($batch);
 
 			$result = $this->client->putRecordBatch([
-			    'DeliveryStreamName' => $this->stream,
-			    'Records' => array_map(function($record) {
-			    	return ["Data"=>$record['data']];
-			    },$batch['records'])
+				'DeliveryStreamName' => $this->stream,
+				'Records' => array_map(function($record) {
+					return ["Data"=>$record['data']];
+				},$batch['records'])
 			]);
 
 			if($retries > 0) {
@@ -82,7 +82,8 @@ class Firehose extends Uploader{
 
 		if(\count($batch['records']) > 0) {
 			return [
-				"success"=>false
+				"success"=>false,
+				'errorMessage' => 'Failed to write ' . count($batch['records']) . ' events to the stream',
 			];
 		} else {
 			if(!empty($correlation['end'])) {
