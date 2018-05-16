@@ -141,7 +141,7 @@ class Combiner {
 				$this->currentRecord['correlation']['end'];
 			}
 		} else {
-			$string = json_encode($record);
+			$string = json_encode($record) . "\n";;
 			$len = strlen($string);
 			$this->totalSize += $len;
 
