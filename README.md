@@ -157,7 +157,7 @@ switch ($env) {
 }
 ```
 
-Set the leo_config, autoload, and IN constant:
+For all files that interact with Leo, Set the leo_config, autoload, and IN constant:
 ```php
 define('IN_LEO', true);
 require_once("vendor/autoload.php");
