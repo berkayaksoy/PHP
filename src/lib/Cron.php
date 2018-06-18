@@ -11,7 +11,6 @@ class Cron {
 		$this->id = $id;
 	}
 
-
 	public function aquireLock() {
 		//CHeck lock    cron.checkLock
 
@@ -22,17 +21,12 @@ class Cron {
 	public function releaseLock() {
 		//removes lock
 
-
 		//flag as completed  cron.reportComplete
 
 		//store message, runAgain Flag
 	}
 
-
 	public function checkpoint() {
 
 	}
-
-
 }
-?>

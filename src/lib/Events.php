@@ -7,16 +7,19 @@ use Aws\S3\S3Client;
 class Events {
 	private $dynamoDBClient;
 
-	public function __construct($config) {
+	public function __construct() {
+		$config = Config::get();
 		$this->dynamoDBClient = new DynamoDbClient(array(
-			"region"=> $config['region'],
+			'profile' => $config['leoaws']['profile'],
+			"region"=> $config['leoaws']['region'],
 			"version"=>"2012-08-10",
 			'http'    => [
 				'verify' => false
 			]
 		));
 		$this->s3Client = new S3Client(array(
-			"region"=> $config['region'],
+			'profile' => $config['leoaws']['profile'],
+			"region"=> $config['leoaws']['region'],
 			"version"=>"2006-03-01",
 			'http' => [
 				'verify' => false
@@ -24,10 +27,10 @@ class Events {
 		));
 	}
 
-
 	public function getEventRange($id, $queue,$opts=[]) {
 		$dynamoDB = new DynamoDB($this->dynamoDBClient);
 		$range = $dynamoDB->getEventRange($id, $queue,$opts);
+
 		return $range;
 	}
 
@@ -43,4 +46,3 @@ class Events {
 		}
 	}
 }
-?>

@@ -21,7 +21,7 @@ class Mass extends Uploader{
 	private $opts;
 	private $uploader;
 
-	public function __construct($id, $bucket, $region, $uploader, $opts=[]) {
+	public function __construct($id, $config, $uploader, $opts = []) {
 		ini_set('memory_limit', '500M');
 		$this->id = $id;
 
@@ -29,16 +29,17 @@ class Mass extends Uploader{
 			'tmpdir'=>isset($opts['tmpdir'])?$opts['tmpdir']:sys_get_temp_dir()
 		], $opts);
 
-		$this->bucket = $bucket;
+		$this->bucket = $config['leosdk']['s3'];
 		$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
 		$this->uploader = $uploader;
 
 		$this->fhandle = gzopen($this->tempFile, 'wb6');
 
 		$this->client = new S3Client([
-			"version"=>"2006-03-01",
-			"region"=>$region,
-			 'http'    => [
+			"version"   => "2006-03-01",
+			'profile'   => $config['leoaws']['profile'],
+			"region"    => $config['leoaws']['region'],
+			 'http'     => [
 		        'verify' => false
 		    ]
 		]);

@@ -17,25 +17,29 @@ use Aws\S3\S3Client;
 use Aws\CloudWatchLogs\CloudWatchLogsClient;
 
 use Aws\Firehose\Exception\FirehoseException;
+use Leo\lib\Config;
 
 class Sdk {
 	private $config;
 	private $id;
 
-	public function __construct($id, $opts) {
+	public function __construct($id) {
+
 		$this->id = $id;
 		$this->config = array_merge([
-			"region"=>"us-west-2",
-			"firehose"=>null,
-			"kinesis"=>null,
-			"s3"=>null,
-			"enableLogging"=>false,
-			"uploader"=>"kinesis",
-			"version"=>"latest",
-			"server"=>gethostname(),
-			"debug"=>true
-		], $opts);
-		if($this->config['enableLogging']) {
+			'uploader'  => 'kinesis',
+			'server'    => gethostname(),
+		], Config::get());
+
+		if (empty($this->config['leosdk'])) {
+			die('leosdk config is not defined in the leo config. See LEO PHP SDK documentation for how the config should be setup.');
+		} else if (empty($this->config['leoaws'])) {
+			die('leoaws config is not defined in the leo config. See LEO PHP SDK documentation for how the config should be setup.');
+		} else if (empty($this->config['leoauth'])) {
+			die('leoauth is not defined in the leo config is not defined. See LEO PHP SDK documentation for how the config should be setup.');
+		}
+
+		if(!empty($this->config['enableLogging'])) {
 			$this->enableLogging();
 		}
 	}
@@ -43,27 +47,28 @@ class Sdk {
 	/**
 	*  @return Loader
 	**/
-	public function createLoader($checkpointer, $opts=[]) {
-		if(empty($opts['config'])) {
+	public function createLoader($checkpointer, $opts = []) {
+		if (empty($opts['config'])) {
 			$opts['config'] = [];
 		}
 		$opts['config'] = array_merge($opts['config'], $this->config);
 		if(!$this->id) {
 			throw new \Exception("You must specify a bot id");
 		}
+		$massuploader = null;
 
 		switch($opts['config']['uploader']) {
 			case "firehose":
-				$uploader = new lib\Firehose($this->id, $this->config['firehose'], $this->config['region']);
-				$massuploader = new lib\Mass($this->id, $this->config['s3'],$this->config['region'], $uploader);
+				$uploader = new lib\Firehose($this->id, $this->config);
+				$massuploader = new lib\Mass($this->id, $this->config, $uploader);
 				break;
 			case "kinesis":
-				$uploader = new lib\Kinesis($this->id, $this->config['kinesis'],$this->config['region']);
-				$massuploader = new lib\Mass($this->id, $this->config['s3'],$this->config['region'], $uploader);
+				$uploader = new lib\Kinesis($this->id, $this->config);
+				$massuploader = new lib\Mass($this->id, $this->config, $uploader);
 				break;
 			case "mass":
-				$kinesis = new lib\Kinesis($this->id, $this->config['kinesis'],$this->config['region']);
-				$uploader = new lib\Mass($this->id, $this->config['s3'],$this->config['region'], $kinesis);
+				$kinesis = new lib\Kinesis($this->id, $this->config);
+				$uploader = new lib\Mass($this->id, $this->config, $kinesis);
 				break;
 		}
 		return new lib\Combiner($this->id, $opts, $uploader, $massuploader,$checkpointer);
@@ -87,7 +92,6 @@ class Sdk {
 		return $events->getEventReader($this->id, $queue, $events->getEventRange($this->id, $queue,$opts),$opts);
 	}
 
-
 	public function createEnrichment($queue, $transform, $toQueue, $opts=[]) {
 		$reader = $this->createOffloader($queue,$opts);
 		$stream = $this->createLoader(function ($checkpoint) use ($reader){
@@ -104,7 +108,6 @@ class Sdk {
 
 		$stream->end();
 	}
-
 
 	public function enableLogging() {
 		if(!$this->id) {
