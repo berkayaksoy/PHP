@@ -29,8 +29,8 @@ class Config
 
 	public function getConfig()
 	{
-		if (!empty($config)) {
-			return $config;
+		if (!empty($this->config)) {
+			return $this->config;
 		}
 
 		return $this->loadConfig();
