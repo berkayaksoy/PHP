@@ -29,16 +29,16 @@ class Stream {
 
 		switch($this->opts['uploader']) {
 			case "firehose":
-				$uploader = new Firehose($this->id, $this->config['firehose'], "us-west-2");
+				$uploader = new Firehose($this->id, $this->config);
 				break;
 			case "kinesis":
-				$uploader = new Kinesis($this->id, $this->config['kinesis'],"us-west-2");
+				$uploader = new Kinesis($this->id, $this->config);
 				break;
 			case "mass":
-				$uploader = new Mass($this->id, $this->config['s3'],"us-west-2");
+				$uploader = new Mass($this->id, $this->config);
 				break;
 			case "ugradeable":
-				$uploader = new Upgradeable($this->id, $this->config['firehose'], "us-west-2");
+				$uploader = new Upgradeable($this->id, $this->config);
 				break;
 
 		}

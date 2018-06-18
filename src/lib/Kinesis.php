@@ -21,14 +21,16 @@ class Kinesis extends Uploader{
 
 	private $opts;
 
-	public function __construct($id, $stream,$region, $opts=[]) {
+	public function __construct($id, $config, $opts=[]) {
 		$this->id = $id;
 		$this->opts = array_merge([
-			"maxRetries"=>4
+			"maxRetries"=>4,
+			'profile' => 'default',
 		], $opts);
-		$this->stream = $stream;
+		$this->stream = $config['leosdk']['kinesis'];
 		$this->client = new KinesisClient(array(
-			"region"=> $region,
+			'profile' => $config['leoaws']['profile'],
+			"region"=> $config['leoaws']['region'],
 			"version"=>"2013-12-02",
 			'http'    => [
 				'verify' => false

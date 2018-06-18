@@ -18,13 +18,14 @@ class Firehose extends Uploader{
 
 	private $opts;
 
-	public function __construct($id, $stream,$region, $opts=[]) {
+	public function __construct($id, $config, $opts = []) {//$stream,$region, $opts=[]) {
 		$this->opts = array_merge([
 			"maxRetries"=>4
 		], $opts);
-		$this->stream = $stream;
+		$this->stream = $config['leosdk']['firehose'];
 		$this->client = new FirehoseClient(array(
-			"region"=> $region,
+			'profile' => $config['leoaws']['profile'],
+			"region"=> $config['leoaws']['region'],
 			"version"=>"2015-08-04",
 			 'http'    => [
 		        'verify' => false

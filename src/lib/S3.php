@@ -48,8 +48,12 @@ class S3IteratorV1 implements \Iterator{
 		$this->cached = [];
 
 		$this->opts = array_merge([
-			"limit"=>1000000
+			"limit"=>1000000,
 		], $opts);
+
+		if (empty($this->opts['leosdk'])) {
+			throw new \Exception('The leosdk config is not defined.');
+		}
 		
 		$this->s3Indexes = [];
 		$params = [
@@ -94,7 +98,6 @@ class S3IteratorV1 implements \Iterator{
 		}
 	}
 
-
 	public function rewind() {
 		if($this->range['start'] != $this->originalStart) {
 			$this->range['start'] = $this->originalStart;	
@@ -134,4 +137,3 @@ class S3Reader extends EventIterator {
 		$this->events = new S3IteratorV1($client, $dynamoDBClient, $params,$range,$opts);
 	}
 } 
-?>
