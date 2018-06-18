@@ -9,6 +9,10 @@ class Config
 
 	public function __construct($config_file = '')
 	{
+		if (empty(self::$instance)) {
+			self::$instance = $this;
+		}
+
 		if ($config_file) {
 			$this->loadConfig($config_file);
 		}
