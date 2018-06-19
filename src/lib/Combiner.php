@@ -132,7 +132,7 @@ class Combiner
 			$string = json_encode($record) . "\n";
 			$len = strlen($string);
 			if ($len > $this->opts['record_size']) {
-				print_r($record);
+				Utils::log($record);
 				throw new \Exception("record size is too large");
 			}
 			if ($len + $this->currentRecord['length'] >= $this->opts['record_size']) {
