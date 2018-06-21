@@ -74,7 +74,7 @@ class Mass extends Uploader{
 		fclose($handler);
 		//unlink($this->tempFile);
 
-		var_dump($this->tempFile);
+		Utils::log($this->tempFile);
 
 
 		$this->uploader->end();

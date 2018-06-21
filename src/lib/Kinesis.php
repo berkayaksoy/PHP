@@ -49,7 +49,7 @@ class Kinesis extends Uploader{
 				$cnt += $record['cnt'];
 				$len += $record['length'];
 			}
-			var_dump($this->id);
+			Utils::log($this->id);
 			$result = $this->client->putRecords([
 				'StreamName' => $this->stream,
 				'Records' => array_map(function($record) {
@@ -62,9 +62,9 @@ class Kinesis extends Uploader{
 			]);
 
 			if($retries > 0) {
-				print "\tRetrying(#{$retries}) {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds\n";
+				Utils::log("Retrying(#{$retries}) {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds");
 			} else {
-				print "\tSent {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds\n";
+				Utils::log("Sent {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds");
 			}
 			$hasErrors = $result->get('FailedRecordCount') == 0;
 			if(!$hasErrors) {

@@ -1,5 +1,7 @@
 <?php
 namespace Leo;
+use Leo\lib\Utils;
+
 class Loader {
 	private $id;
 	private $opts;
@@ -37,7 +39,7 @@ class Loader {
 		$reader = $events->getEventReader($queue, $events->getEventRange($this->id, $queue,$opts),$opts);
 
 		$stream = $this->createBufferedWriteStream($opts, function ($checkpointData,$leoCheckpoint) {
-			var_dump($checkpointData);
+			Utils::log($checkpointData);
 		});
 		foreach($reader->events as $count=>$event) {
 			$result = $transformFunc($event, null);
