@@ -30,10 +30,12 @@ class Mass extends Uploader{
 		], $opts);
 
 		$this->bucket = $config['leosdk']['s3'];
-		$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
 		$this->uploader = $uploader;
 
-		$this->fhandle = gzopen($this->tempFile, 'wb6');
+		if ($config['uploader'] === 'mass') {
+			$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
+			$this->fhandle = gzopen($this->tempFile, 'wb6');
+		}
 
 		$this->client = new S3Client([
 			"version"   => "2006-03-01",
@@ -68,14 +70,15 @@ class Mass extends Uploader{
 			'Key'=> $key
 		]);
 
-		/*
-		* @todo  check if it was a success or not
-		*/
 		fclose($handler);
-		//unlink($this->tempFile);
 
-		var_dump($this->tempFile);
-
+		// if we have an ObjectURL, it was successful. Remove the temp file.
+		if (!empty($result['ObjectURL'])) {
+			unlink($this->tempFile);
+			print("Temp file ({$this->tempFile}) uploaded to S3 and cleaned up.");
+		} else {
+			throw new \Exception('Unable to upload ' . $this->tempFile . ' to S3');
+		}
 
 		$this->uploader->end();
 		return;

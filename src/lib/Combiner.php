@@ -31,7 +31,7 @@ class Combiner
 				"record_size" => $uploader->record_size,
 				"max_records" => $uploader->max_records,
 				"duration" => $uploader->duration,
-				"bytesPerSecond" => $uploader->bytesPerSecond
+				"bytesPerSecond" => !empty($uploader->bytesPerSecond) ? $uploader->bytesPerSecond : 1024 * 1024 * 1.5,
 			],
 			$opts
 		);
@@ -88,7 +88,7 @@ class Combiner
 			$result = $this->uploader->sendRecords($this->batch);
 			if (!$result['success']) {
 				throw new \Exception(!empty($result['errorMessage']) ? $result['errorMessage'] : 'Unable to write events to the bus.');
-			} else if ($result['eid']) {
+			} else if (!empty($result['eid'])) {
 				Utils::log($result);
 				call_user_func($this->checkpointer, $result);
 			}
@@ -132,9 +132,13 @@ class Combiner
 			$string = json_encode($record) . "\n";
 			$len = strlen($string);
 			if ($len > $this->opts['record_size']) {
+				echo "Record size: $len > Max record size: {$this->opts['record_size']}" . PHP_EOL;
 				print_r($record);
 				throw new \Exception("record size is too large");
+			} else {
+				echo "Record size: $len <= Max record size: {$this->opts['record_size']}" . PHP_EOL;
 			}
+
 			if ($len + $this->currentRecord['length'] >= $this->opts['record_size']) {
 				$this->addCurrentRecord();
 			}
