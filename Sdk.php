@@ -51,24 +51,25 @@ class Sdk {
 		if (empty($opts['config'])) {
 			$opts['config'] = [];
 		}
-		$opts['config'] = array_merge($opts['config'], $this->config);
+		$opts['config'] = array_merge($this->config, $opts['config']);
 		if(!$this->id) {
 			throw new \Exception("You must specify a bot id");
 		}
-		$massuploader = null;
+		$massuploader = $uploader = null;
 
 		switch($opts['config']['uploader']) {
 			case "firehose":
-				$uploader = new lib\Firehose($this->id, $this->config);
-				$massuploader = new lib\Mass($this->id, $this->config, $uploader);
+				$uploader = new lib\Firehose($this->id, $opts['config']);
+//				$massuploader = new lib\Mass($this->id, $opts['config'], $uploader);
 				break;
 			case "kinesis":
-				$uploader = new lib\Kinesis($this->id, $this->config);
-				$massuploader = new lib\Mass($this->id, $this->config, $uploader);
+				$uploader = new lib\Kinesis($this->id, $opts['config']);
+//				$massuploader = new lib\Mass($this->id, $opts['config'], $uploader);
 				break;
 			case "mass":
-				$kinesis = new lib\Kinesis($this->id, $this->config);
-				$uploader = new lib\Mass($this->id, $this->config, $kinesis);
+				throw new \Exception('Mass loading is not implemented yet');
+//				$kinesis = new lib\Kinesis($this->id, $opts['config']);
+//				$uploader = new lib\Mass($this->id, $opts['config'], $kinesis);
 				break;
 		}
 		return new lib\Combiner($this->id, $opts, $uploader, $massuploader,$checkpointer);

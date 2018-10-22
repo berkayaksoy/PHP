@@ -31,7 +31,7 @@ class Combiner
 				"record_size" => $uploader->record_size,
 				"max_records" => $uploader->max_records,
 				"duration" => $uploader->duration,
-				"bytesPerSecond" => $uploader->bytesPerSecond
+				"bytesPerSecond" => !empty($uploader->bytesPerSecond) ? $uploader->bytesPerSecond : 1024 * 1024 * 1.5,
 			],
 			$opts
 		);
@@ -88,7 +88,7 @@ class Combiner
 			$result = $this->uploader->sendRecords($this->batch);
 			if (!$result['success']) {
 				throw new \Exception(!empty($result['errorMessage']) ? $result['errorMessage'] : 'Unable to write events to the bus.');
-			} else if ($result['eid']) {
+			} else if (!empty($result['eid'])) {
 				Utils::log($result);
 				call_user_func($this->checkpointer, $result);
 			}
@@ -101,18 +101,20 @@ class Combiner
 			$this->startTime = time();
 		}
 
-		if ($this->upgradeable && !(--$this->totalCount)) {
-			$this->totalCount = 100;
-			$seconds = max(1, (time() - $this->startTime));
+		// Not supported
+//		if ($this->upgradeable && !(--$this->totalCount)) {
+//			$this->totalCount = 100;
+//			$seconds = max(1, (time() - $this->startTime));
+//
+//
+//			$rate = $this->totalSize / $seconds;
+//			if ($rate > $this->opts['bytesPerSecond']) {
+//				Utils::log("Switching to mass upload");
+//				$this->upgradeable = false;
+//				$this->uploader = $this->massUploader;
+//			}
+//		}
 
-
-			$rate = $this->totalSize / $seconds;
-			if ($rate > $this->opts['bytesPerSecond']) {
-				Utils::log("Switching to mass upload");
-				$this->upgradeable = false;
-				$this->uploader = $this->massUploader;
-			}
-		}
 		$record = [
 			"id" => $this->id,
 			"event" => $event,
@@ -132,9 +134,11 @@ class Combiner
 			$string = json_encode($record) . "\n";
 			$len = strlen($string);
 			if ($len > $this->opts['record_size']) {
+				echo "Record size: $len > Max record size: {$this->opts['record_size']}" . PHP_EOL;
 				Utils::log($record);
 				throw new \Exception("record size is too large");
 			}
+
 			if ($len + $this->currentRecord['length'] >= $this->opts['record_size']) {
 				$this->addCurrentRecord();
 			}

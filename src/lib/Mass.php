@@ -30,10 +30,7 @@ class Mass extends Uploader{
 		], $opts);
 
 		$this->bucket = $config['leosdk']['s3'];
-		$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
 		$this->uploader = $uploader;
-
-		$this->fhandle = gzopen($this->tempFile, 'wb6');
 
 		$this->client = new S3Client([
 			"version"   => "2006-03-01",
@@ -46,6 +43,12 @@ class Mass extends Uploader{
 	}
 
 	public function sendRecords($batch) {
+		// if we haven't created a temp file, create one now
+		if (empty($this->tempFile)) {
+			$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
+			$this->fhandle = gzopen($this->tempFile, 'wb6');
+		}
+
 		$correlation = "";
 		foreach($batch['records'] as $record) {
 			gzwrite($this->fhandle, $record['data']);
@@ -57,6 +60,11 @@ class Mass extends Uploader{
 	}
 
 	public function end() {
+		if (empty($this->fhandle)) {
+			$this->uploader->end();
+			return;
+		}
+
 		gzclose($this->fhandle);
 
 		$handler = fopen($this->tempFile,'r');
@@ -68,14 +76,17 @@ class Mass extends Uploader{
 			'Key'=> $key
 		]);
 
-		/*
-		* @todo  check if it was a success or not
-		*/
 		fclose($handler);
-		//unlink($this->tempFile);
 
 		Utils::log($this->tempFile);
 
+		// if we have an ObjectURL, it was successful. Remove the temp file.
+		if (!empty($result['ObjectURL'])) {
+			unlink($this->tempFile);
+			echo "Temp file ({$this->tempFile}) uploaded to S3 and cleaned up." . PHP_EOL;
+		} else {
+			throw new \Exception('Unable to upload ' . $this->tempFile . ' to S3');
+		}
 
 		$this->uploader->end();
 		return;
