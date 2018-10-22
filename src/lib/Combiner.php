@@ -135,10 +135,8 @@ class Combiner
 			$len = strlen($string);
 			if ($len > $this->opts['record_size']) {
 				echo "Record size: $len > Max record size: {$this->opts['record_size']}" . PHP_EOL;
-				print_r($record);
+				Utils::log($record);
 				throw new \Exception("record size is too large");
-			} else {
-				echo "Record size: $len <= Max record size: {$this->opts['record_size']}" . PHP_EOL;
 			}
 
 			if ($len + $this->currentRecord['length'] >= $this->opts['record_size']) {
