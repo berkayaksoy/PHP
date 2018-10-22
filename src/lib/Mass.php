@@ -60,6 +60,11 @@ class Mass extends Uploader{
 	}
 
 	public function end() {
+		if (empty($this->fhandle)) {
+			$this->uploader->end();
+			return;
+		}
+
 		gzclose($this->fhandle);
 
 		$handler = fopen($this->tempFile,'r');
