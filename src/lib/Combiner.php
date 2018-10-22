@@ -101,18 +101,20 @@ class Combiner
 			$this->startTime = time();
 		}
 
-		if ($this->upgradeable && !(--$this->totalCount)) {
-			$this->totalCount = 100;
-			$seconds = max(1, (time() - $this->startTime));
+		// Not supported
+//		if ($this->upgradeable && !(--$this->totalCount)) {
+//			$this->totalCount = 100;
+//			$seconds = max(1, (time() - $this->startTime));
+//
+//
+//			$rate = $this->totalSize / $seconds;
+//			if ($rate > $this->opts['bytesPerSecond']) {
+//				Utils::log("Switching to mass upload");
+//				$this->upgradeable = false;
+//				$this->uploader = $this->massUploader;
+//			}
+//		}
 
-
-			$rate = $this->totalSize / $seconds;
-			if ($rate > $this->opts['bytesPerSecond']) {
-				Utils::log("Switching to mass upload");
-				$this->upgradeable = false;
-				$this->uploader = $this->massUploader;
-			}
-		}
 		$record = [
 			"id" => $this->id,
 			"event" => $event,
