@@ -60,15 +60,16 @@ class Sdk {
 		switch($opts['config']['uploader']) {
 			case "firehose":
 				$uploader = new lib\Firehose($this->id, $opts['config']);
-				$massuploader = new lib\Mass($this->id, $opts['config'], $uploader);
+//				$massuploader = new lib\Mass($this->id, $opts['config'], $uploader);
 				break;
 			case "kinesis":
 				$uploader = new lib\Kinesis($this->id, $opts['config']);
-				$massuploader = new lib\Mass($this->id, $opts['config'], $uploader);
+//				$massuploader = new lib\Mass($this->id, $opts['config'], $uploader);
 				break;
 			case "mass":
-				$kinesis = new lib\Kinesis($this->id, $opts['config']);
-				$uploader = new lib\Mass($this->id, $opts['config'], $kinesis);
+				throw new \Exception('Mass loading is not implemented yet');
+//				$kinesis = new lib\Kinesis($this->id, $opts['config']);
+//				$uploader = new lib\Mass($this->id, $opts['config'], $kinesis);
 				break;
 		}
 		return new lib\Combiner($this->id, $opts, $uploader, $massuploader,$checkpointer);

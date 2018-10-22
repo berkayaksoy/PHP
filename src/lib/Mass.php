@@ -32,11 +32,6 @@ class Mass extends Uploader{
 		$this->bucket = $config['leosdk']['s3'];
 		$this->uploader = $uploader;
 
-		if ($config['uploader'] === 'mass') {
-			$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
-			$this->fhandle = gzopen($this->tempFile, 'wb6');
-		}
-
 		$this->client = new S3Client([
 			"version"   => "2006-03-01",
 			'profile'   => $config['leoaws']['profile'],
@@ -48,6 +43,12 @@ class Mass extends Uploader{
 	}
 
 	public function sendRecords($batch) {
+		// if we haven't created a temp file, create one now
+		if (empty($this->tempFile)) {
+			$this->tempFile = \tempnam($this->opts['tmpdir'], 'leo');
+			$this->fhandle = gzopen($this->tempFile, 'wb6');
+		}
+
 		$correlation = "";
 		foreach($batch['records'] as $record) {
 			gzwrite($this->fhandle, $record['data']);
