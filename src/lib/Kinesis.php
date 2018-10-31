@@ -7,7 +7,6 @@ class Kinesis extends Uploader{
 	private $stream;
 	private $id;
 
-
 	// public $batch_size = 1024 * 1024 * 1;
 	public $batch_size = 1048576;
 	// public $record_size = 1024 * 1024 * 1;
@@ -21,10 +20,15 @@ class Kinesis extends Uploader{
 
 	private $opts;
 
+	private $backoff;
+
 	public function __construct($id, $config, $opts=[]) {
+		// ready the backoff
+		$this->backoff = new backoff();
+
 		$this->id = $id;
 		$this->opts = array_merge([
-			"maxRetries"=>4,
+			"maxRetries" => 10, // set default number of retries to 10 now that we have backoff
 			'profile' => 'default',
 		], $opts);
 		$this->stream = $config['leosdk']['kinesis'];
@@ -49,7 +53,6 @@ class Kinesis extends Uploader{
 				$cnt += $record['cnt'];
 				$len += $record['length'];
 			}
-			Utils::log($this->id);
 			$result = $this->client->putRecords([
 				'StreamName' => $this->stream,
 				'Records' => array_map(function($record) {
@@ -61,13 +64,21 @@ class Kinesis extends Uploader{
 				},$batch['records'])
 			]);
 
-			if($retries > 0) {
-				Utils::log("Retrying(#{$retries}) {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds");
-			} else {
-				Utils::log("Sent {$cnt} records of size ({$len}) in " . (microtime(true) - $time_start) . " seconds");
-			}
-			$hasErrors = $result->get('FailedRecordCount') == 0;
+			$results = [
+				'id'            => $this->id,
+				'success'       => false, // set this to false by default. Change if successful.
+				'records'       => $cnt,
+				'recordsFailed' => 0,
+				'time'          => (microtime(true) - $time_start) . ' seconds',
+				'size'          => $len,
+				'retries'       => $retries,
+			];
+
+			$hasErrors = $result->get('FailedRecordCount') > 0;
 			if(!$hasErrors) {
+				// Return the correlation eid on success
+				$correlation = array_pop($batch['records'])['correlation'];
+				$results['success'] = true;
 				$batch['records'] = [];
 			} else { //we need to prune the ones that went through
 				$responses = $result->get("Records");
@@ -82,6 +93,19 @@ class Kinesis extends Uploader{
 					}
 				}
 			}
+
+			$recordsRemaining = \count($batch['records']);
+			$results['recordsFailed'] = $recordsRemaining;
+
+			// if we have records remaining to submit, backoff and retry.
+			if ($recordsRemaining) {
+				Utils::log($results);
+				$this->backoff->backoff();
+			} else {
+				// reset the backoff delay because all was successful
+				$this->backoff->reset();
+			}
+
 			$retries++;
 		} while (\count($batch['records']) > 0 && $retries < $this->opts['maxRetries']);
 
@@ -96,16 +120,14 @@ class Kinesis extends Uploader{
 			} else {
 				$checkpoint = $correlation['start'];
 			}
-			return [
-				"success"=>true,
-				"eid"=>$checkpoint,
-				"records"=>$cnt
-			];
+
+			$results['eid'] = $checkpoint;
+
+			return $results;
 		}
 	}
 
-
 	public function end() {
-		
+
 	}
 }

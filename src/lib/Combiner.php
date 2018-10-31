@@ -91,6 +91,9 @@ class Combiner
 			} else if (!empty($result['eid'])) {
 				Utils::log($result);
 				call_user_func($this->checkpointer, $result);
+			} else {
+				// it was successful. Log the result.
+				Utils::log($result);
 			}
 		}
 	}
