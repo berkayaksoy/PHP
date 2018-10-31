@@ -31,7 +31,7 @@ class backoff
 		sleep($this->currentDelay);
 	}
 
-	private function fibanocci($n, $a = 1, $b = 0)
+	private function fibanocci($n, $a = 1, $b = 1)
 	{
 		if ($n) {
 			return $this->fibanocci($n - 1, $b, $a + $b);

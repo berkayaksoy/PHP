@@ -1,8 +1,11 @@
 <?php
+
 namespace Leo\lib;
+
 use Aws\Kinesis\KinesisClient;
 
-class Kinesis extends Uploader{
+class Kinesis extends Uploader
+{
 	private $client;
 	private $stream;
 	private $id;
@@ -22,7 +25,8 @@ class Kinesis extends Uploader{
 
 	private $backoff;
 
-	public function __construct($id, $config, $opts=[]) {
+	public function __construct($id, $config, $opts = [])
+	{
 		// ready the backoff
 		$this->backoff = new backoff();
 
@@ -34,58 +38,70 @@ class Kinesis extends Uploader{
 		$this->stream = $config['leosdk']['kinesis'];
 		$this->client = new KinesisClient(array(
 			'profile' => $config['leoaws']['profile'],
-			"region"=> $config['leoaws']['region'],
-			"version"=>"2013-12-02",
-			'http'    => [
+			"region" => $config['leoaws']['region'],
+			"version" => "2013-12-02",
+			'http' => [
 				'verify' => false
 			]
 		));
 	}
 
-	public function sendRecords($batch) {
+	public function sendRecords($batch)
+	{
 		$retries = 0;
 		$correlation = null;
 		do {
 			$time_start = microtime(true);
 			$cnt = 0;
-			$len =0;
-			foreach($batch['records'] as $record) {
+			$len = 0;
+			foreach ($batch['records'] as $record) {
 				$cnt += $record['cnt'];
 				$len += $record['length'];
 			}
-			$result = $this->client->putRecords([
-				'StreamName' => $this->stream,
-				'Records' => array_map(function($record) {
-					return [
-						"Data"=>gzencode($record['data']),
-						"PartitionKey"=> $this->id
 
-					];
-				},$batch['records'])
-			]);
+			try {
+				$result = $this->client->putRecords([
+					'StreamName' => $this->stream,
+					'Records' => array_map(function ($record) {
+						return [
+							"Data" => gzencode($record['data']),
+							"PartitionKey" => $this->id
+
+						];
+					}, $batch['records'])
+				]);
+				$hasErrors = $result->get('FailedRecordCount') > 0;
+			} catch (\Exception $e) {
+				if ($retries + 1 >= $this->opts['maxRetries']) {
+					throw new \Exception($e->getMessage());
+				}
+
+				if (empty($hasErrors)) {
+					$hasErrors = \count($batch['records']);
+				}
+			}
 
 			$results = [
-				'id'            => $this->id,
-				'success'       => false, // set this to false by default. Change if successful.
-				'records'       => $cnt,
+				'id' => $this->id,
+				'success' => false, // set this to false by default. Change if successful.
+				'records' => $cnt,
 				'recordsFailed' => 0,
-				'time'          => (microtime(true) - $time_start) . ' seconds',
-				'size'          => $len,
-				'retries'       => $retries,
+				'time' => (microtime(true) - $time_start) . ' seconds',
+				'size' => $len,
+				'retries' => $retries,
 			];
 
-			$hasErrors = $result->get('FailedRecordCount') > 0;
-			if(!$hasErrors) {
+			if (!$hasErrors) {
 				// Return the correlation eid on success
 				$correlation = array_pop($batch['records'])['correlation'];
 				$results['success'] = true;
 				$batch['records'] = [];
-			} else { //we need to prune the ones that went through
+			} else if (!empty($result)) { //we need to prune the ones that went through
 				$responses = $result->get("Records");
 				$maxCompleted = -1;
-				foreach($responses as $i=>$response) {
-					if(isset($response['SequenceNumber'])) {
-						if($maxCompleted == $i -1) { //Was the last one completed, then this one can be moved
+				foreach ($responses as $i => $response) {
+					if (isset($response['SequenceNumber'])) {
+						if ($maxCompleted == $i - 1) { //Was the last one completed, then this one can be moved
 							$maxCompleted = $i;
 							$correlation = $batch['records'][$maxCompleted]['correlation'];
 						}
@@ -109,13 +125,13 @@ class Kinesis extends Uploader{
 			$retries++;
 		} while (\count($batch['records']) > 0 && $retries < $this->opts['maxRetries']);
 
-		if(\count($batch['records']) > 0) {
+		if (\count($batch['records']) > 0) {
 			return [
-				"success"=>false,
+				"success" => false,
 				'errorMessage' => 'Failed to write ' . count($batch['records']) . ' events to the stream',
 			];
 		} else {
-			if(!empty($correlation['end'])) {
+			if (!empty($correlation['end'])) {
 				$checkpoint = $correlation['end'];
 			} else {
 				$checkpoint = $correlation['start'];
@@ -127,7 +143,8 @@ class Kinesis extends Uploader{
 		}
 	}
 
-	public function end() {
+	public function end()
+	{
 
 	}
 }
