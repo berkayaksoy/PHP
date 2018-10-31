@@ -27,7 +27,7 @@ class backoff
 			$this->currentDelay = $this->maxDelay;
 		}
 
-		Utils::log("Backing off for {$this->currentDelay} seconds before retrying.");
+		Utils::log(['operation' => 'backoff', 'seconds' => $this->currentDelay]);//"Backing off for {$this->currentDelay} seconds before retrying.");
 		sleep($this->currentDelay);
 	}
 

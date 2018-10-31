@@ -59,6 +59,17 @@ class Kinesis extends Uploader
 				$len += $record['length'];
 			}
 
+			$results = [
+				'operation' => 'Kinesis->sendRecords',
+				'id' => $this->id,
+				'success' => false, // set this to false by default. Change if successful.
+				'records' => $cnt,
+				'recordsFailed' => 0,
+				'size' => $len,
+				'retries' => $retries,
+				'time' => 0,
+			];
+
 			try {
 				$result = $this->client->putRecords([
 					'StreamName' => $this->stream,
@@ -72,24 +83,20 @@ class Kinesis extends Uploader
 				]);
 				$hasErrors = $result->get('FailedRecordCount') > 0;
 			} catch (\Exception $e) {
-				if ($retries + 1 >= $this->opts['maxRetries']) {
-					throw new \Exception($e->getMessage());
-				}
 
 				if (empty($hasErrors)) {
-					$hasErrors = \count($batch['records']);
+					$hasErrors = $cnt;
+				}
+
+				if ($retries + 1 >= $this->opts['maxRetries']) {
+					$results['recordsFailed'] = $hasErrors;
+					$results['time'] = (microtime(true) - $time_start) . ' seconds';
+					Utils::log($results);
+					throw new \Exception($e->getMessage());
 				}
 			}
 
-			$results = [
-				'id' => $this->id,
-				'success' => false, // set this to false by default. Change if successful.
-				'records' => $cnt,
-				'recordsFailed' => 0,
-				'time' => (microtime(true) - $time_start) . ' seconds',
-				'size' => $len,
-				'retries' => $retries,
-			];
+			$results['time'] = (microtime(true) - $time_start) . ' seconds';
 
 			if (!$hasErrors) {
 				// Return the correlation eid on success
@@ -111,7 +118,7 @@ class Kinesis extends Uploader
 			}
 
 			$recordsRemaining = \count($batch['records']);
-			$results['recordsFailed'] = $recordsRemaining;
+			$results['recordsFailed'] = $cnt;
 
 			// if we have records remaining to submit, backoff and retry.
 			if ($recordsRemaining) {
