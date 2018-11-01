@@ -50,6 +50,7 @@ class Kinesis extends Uploader
 	{
 		$retries = 0;
 		$correlation = null;
+
 		do {
 			$time_start = microtime(true);
 			$cnt = 0;
@@ -92,7 +93,13 @@ class Kinesis extends Uploader
 					$results['recordsFailed'] = $hasErrors;
 					$results['time'] = (microtime(true) - $time_start) . ' seconds';
 					Utils::log($results);
-					throw new \Exception($e->getMessage());
+
+					// throw an exception with remaining batch and record count
+					$exception = new Exception($e->getMessage());
+					$exception->setBatchCount(\count($batch['records']));
+					$exception->setRecordCount($cnt);
+
+					throw $exception;
 				}
 			}
 
@@ -133,10 +140,12 @@ class Kinesis extends Uploader
 		} while (\count($batch['records']) > 0 && $retries < $this->opts['maxRetries']);
 
 		if (\count($batch['records']) > 0) {
-			return [
-				"success" => false,
-				'errorMessage' => 'Failed to write ' . count($batch['records']) . ' events to the stream',
-			];
+			// throw an exception with remaining batch and record count
+			$exception = new Exception('Failed to write events to the stream.');
+			$exception->setRecordCount($cnt);
+			$exception->setBatchCount($recordsRemaining);
+
+			throw $exception;
 		} else {
 			if (!empty($correlation['end'])) {
 				$checkpoint = $correlation['end'];
