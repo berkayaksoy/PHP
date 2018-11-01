@@ -89,11 +89,11 @@ class Combiner
 			if (!$result['success']) {
 				throw new \Exception(!empty($result['errorMessage']) ? $result['errorMessage'] : 'Unable to write events to the bus.');
 			} else if (!empty($result['eid'])) {
-				Utils::log($result);
+				Utils::info($result);
 				call_user_func($this->checkpointer, $result);
 			} else {
 				// it was successful. Log the result.
-				Utils::log($result);
+				Utils::info($result);
 			}
 		}
 	}
@@ -137,8 +137,8 @@ class Combiner
 			$string = json_encode($record) . "\n";
 			$len = strlen($string);
 			if ($len > $this->opts['record_size']) {
-				echo "Record size: $len > Max record size: {$this->opts['record_size']}" . PHP_EOL;
-				Utils::log($record);
+				Utils::error("Record size: $len > Max record size: {$this->opts['record_size']}" . PHP_EOL);
+				Utils::info($record);
 				throw new \Exception("record size is too large");
 			}
 

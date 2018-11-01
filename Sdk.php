@@ -96,7 +96,7 @@ class Sdk {
 	public function createEnrichment($queue, $transform, $toQueue, $opts=[]) {
 		$reader = $this->createOffloader($queue,$opts);
 		$stream = $this->createLoader(function ($checkpoint) use ($reader){
-			lib\Utils::log($checkpoint);
+			lib\Utils::info($checkpoint);
 			$reader->checkpoint($checkpoint);
 		});
 		$lastEvent = null;

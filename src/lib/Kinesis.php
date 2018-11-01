@@ -25,7 +25,7 @@ class Kinesis extends Uploader
 
 	private $backoff;
 
-	public function __construct($id, $config, $opts = [])
+	public function __construct($id, $config, $opts = []) // opts is not passed in
 	{
 		// ready the backoff
 		$this->backoff = new backoff();
@@ -34,7 +34,8 @@ class Kinesis extends Uploader
 		$this->opts = array_merge([
 			"maxRetries" => 10, // set default number of retries to 10 now that we have backoff
 			'profile' => 'default',
-		], $opts);
+		], $config);
+
 		$this->stream = $config['leosdk']['kinesis'];
 		$this->client = new KinesisClient(array(
 			'profile' => $config['leoaws']['profile'],
@@ -92,7 +93,7 @@ class Kinesis extends Uploader
 				if ($retries + 1 >= $this->opts['maxRetries']) {
 					$results['recordsFailed'] = $hasErrors;
 					$results['time'] = (microtime(true) - $time_start) . ' seconds';
-					Utils::log($results);
+					Utils::error($results);
 
 					// throw an exception with remaining batch and record count
 					$exception = new Exception($e->getMessage());
@@ -109,6 +110,7 @@ class Kinesis extends Uploader
 				// Return the correlation eid on success
 				$correlation = array_pop($batch['records'])['correlation'];
 				$results['success'] = true;
+				$results['recordsFailed'] = 0;
 				$batch['records'] = [];
 			} else if (!empty($result)) { //we need to prune the ones that went through
 				$responses = $result->get("Records");
@@ -125,11 +127,11 @@ class Kinesis extends Uploader
 			}
 
 			$recordsRemaining = \count($batch['records']);
-			$results['recordsFailed'] = $cnt;
 
 			// if we have records remaining to submit, backoff and retry.
 			if ($recordsRemaining) {
-				Utils::log($results);
+				$results['recordsFailed'] = $cnt;
+				Utils::error($results);
 				$this->backoff->backoff();
 			} else {
 				// reset the backoff delay because all was successful

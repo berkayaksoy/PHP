@@ -83,7 +83,7 @@ class Mass extends Uploader{
 		// if we have an ObjectURL, it was successful. Remove the temp file.
 		if (!empty($result['ObjectURL'])) {
 			unlink($this->tempFile);
-			echo "Temp file ({$this->tempFile}) uploaded to S3 and cleaned up." . PHP_EOL;
+			Utils::log("Temp file ({$this->tempFile}) uploaded to S3 and cleaned up.");
 		} else {
 			throw new \Exception('Unable to upload ' . $this->tempFile . ' to S3');
 		}
